@@ -1,0 +1,1 @@
+mount -o anon \\10.70.2.15\git M:
