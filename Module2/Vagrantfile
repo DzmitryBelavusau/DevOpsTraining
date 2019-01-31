@@ -74,15 +74,13 @@ Vagrant.configure("2") do |config|
     server1.vm.hostname = "server1"
     server1.vm.network "private_network", ip: "192.168.0.11"
     server1.vm.provision "shell", inline: <<-SHELL
-      sudo yum install git -y
-      git --version
-      sudo echo > /etc/hosts "192.168.0.12  server2"
-      mkdir /home/vagrant/git
+      yum install git -y
+      if ! grep -q server2 /etc/hosts; then echo > /etc/hosts "192.168.0.12  server2"; fi
+      if ! [ -d /home/vagrant/git ]; then mkdir /home/vagrant/git; fi
       cd /home/vagrant/git
-      git init
-      git clone https://github.com/DzmitryBelavusau/DevOpsTraining.git
-      cd /home/vagrant/git/DevOpsTraining
-      git checkout task2
+      if ! [ -d /home/vagrant/git/DevOpsTraining ]; then git clone https://github.com/DzmitryBelavusau/DevOpsTraining.git; fi
+      cd /home/vagrant/git/DevOpsTraining      
+      br=$(git rev-parse --abbrev-ref HEAD); if [[ $br != task2 ]]; then git checkout task2; fi
       cat /home/vagrant/git/DevOpsTraining/Module2/text.txt
     SHELL
   end
@@ -90,7 +88,7 @@ Vagrant.configure("2") do |config|
     server2.vm.hostname = "server2"
     server2.vm.network "private_network", ip: "192.168.0.12"
     server2.vm.provision "shell", inline: <<-SHELL
-      sudo echo > /etc/hosts "192.168.0.11  server1"
+    if ! grep -q server1 /etc/hosts; then echo > /etc/hosts "192.168.0.11  server1"; fi
     SHELL
   end
 end
