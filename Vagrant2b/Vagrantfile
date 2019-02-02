@@ -78,9 +78,18 @@ Vagrant.configure("2") do |config|
       if ! [ -f /home/vagrant/.ssh/id_rsa ]; then ssh-keygen -t rsa -b 2048 -f /home/vagrant/.ssh/id_rsa; fi
   SHELL
     server1b.vm.provision "shell", inline: <<-SHELL
-      cat /home/vagrant/.ssh/authorized_keys
       if ! grep -q server2b /etc/hosts; then echo >> /etc/hosts "192.168.0.12  server2b"; fi
       cp /home/vagrant/.ssh/id_rsa.pub /vagrant/.vagrant/machines/id_rsa_pub.server1b
+      yum -y install at
+      atd
+      echo "#!/bin/bash
+
+      if ! grep -q server2b /home/vagrant/.ssh/authorized_keys; then cat /vagrant/.vagrant/machines/id_rsa_pub.server2b >> /home/vagrant/.ssh/authorized_keys; fi
+      chmod 755 ~ /home/vagrant/.ssh
+      chmod 644 /home/vagrant/.ssh/authorized_keys
+      chmod 400 /home/vagrant/.ssh/id_rsa" > /home/vagrant/provision.sh
+      chmod +x /home/vagrant/provision.sh
+      echo /home/vagrant/provision.sh | at now + 3 min
     SHELL
   end
   config.vm.define "server2b" do |server2b|
@@ -90,11 +99,9 @@ Vagrant.configure("2") do |config|
       if ! [ -f /home/vagrant/.ssh/id_rsa ]; then ssh-keygen -t rsa -b 2048 -f /home/vagrant/.ssh/id_rsa; fi
     SHELL
     server2b.vm.provision "shell", inline: <<-SHELL
-      cat /home/vagrant/.ssh/authorized_keys
       if ! grep -q server1b /etc/hosts; then echo >> /etc/hosts "192.168.0.11  server1b"; fi
       cp /home/vagrant/.ssh/id_rsa.pub /vagrant/.vagrant/machines/id_rsa_pub.server2b
       if ! grep -q server1b /home/vagrant/.ssh/authorized_keys; then cat /vagrant/.vagrant/machines/id_rsa_pub.server1b >> /home/vagrant/.ssh/authorized_keys; fi
-      cat /home/vagrant/.ssh/authorized_keys
       chmod 755 ~ /home/vagrant/.ssh
       chmod 644 /home/vagrant/.ssh/authorized_keys
       chmod 400 /home/vagrant/.ssh/id_rsa
