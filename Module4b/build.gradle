@@ -21,6 +21,8 @@ task sorting {
 
     for ( i = 0; i < unsortedArray.size; i++ ) {
         def fullNumber = unsortedArray[i].intdiv(1000000)-100+"."+((unsortedArray[i]%1000000).intdiv(1000)-100)+"."+((unsortedArray[i]%1000)-100)
-        println fullNumber
+        unsortedArray[i] = fullNumber
     }
+
+    println unsortedArray
 }
