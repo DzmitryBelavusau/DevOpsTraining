@@ -1,0 +1,123 @@
+node {
+    
+    stage('Clone sources') {
+        git branch: 'task6', credentialsId: 'GitHubDzmitryBelavusau', url: 'https://github.com/DzmitryBelavusau/DevOpsTraining.git'
+    }
+
+    stage('Gradle incrementVersion') {
+        if (isUnix()) {
+            dir('Module4') {sh './gradlew incrementVersion'}
+        } else {
+            dir('Module4') {bat 'gradlew.bat incrementVersion'}
+        }
+    }
+
+    stage('Gradle clean build') {
+        if (isUnix()) {
+            dir('Module4') {sh './gradlew clean build'}
+        } else {
+            dir('Module4') {bat 'gradlew.bat clean build'}
+        }
+    }
+
+    def props = readProperties  file:'Module4/gradle.properties'
+    def VERSION = props['VERSION']
+    def repArtifact = 'test'
+    def repGroup = 'test'
+    def repClass = 'test'
+
+    stage('Nexus upload SNAPSHOT') {
+        nexusArtifactUploader artifacts: [[artifactId: "${repArtifact}", classifier: "${repClass}", file: 'Module4/build/libs/task4.war', type: 'war']], 
+        credentialsId: 'nexusOSS', groupId: "${repGroup}", nexusUrl: 'localhost:8081/nexus', nexusVersion: 'nexus2', protocol: 'http', repository: 'snapshots', version: "${VERSION}"+'-SNAPSHOT'
+    }
+
+    def snapshotinfoFile = httpRequest "http://192.168.100.251:8081/nexus/content/repositories/snapshots/${repGroup}/${repArtifact}/${VERSION}-SNAPSHOT/maven-metadata.xml"
+    def snapshotinfo = new XmlParser().parseText(snapshotinfoFile.content)
+    def nameSnapshot = snapshotinfo.versioning.snapshotVersions.snapshotVersion.value[0].text()
+
+    def remote1 = [:]
+    remote1.name = 'tomcat1'
+    remote1.host = '192.168.100.11'
+    remote1.user = 'root'
+    remote1.password = 'vagrant'
+    remote1.allowAnyHosts = true
+    stage('Remote SSH1') {
+        sshCommand remote: remote1, command: "sudo wget http://192.168.100.251:8081/nexus/content/repositories/snapshots/${repGroup}/${repArtifact}/${VERSION}-SNAPSHOT/${repArtifact}-${nameSnapshot}-${repClass}.war"
+        sshCommand remote: remote1, command: "sudo systemctl stop tomcat"
+        sshCommand remote: remote1, command: "sudo cp -f ~/${repArtifact}-${nameSnapshot}-${repClass}.war /usr/share/tomcat/webapps/test-${VERSION}.war"
+        sshCommand remote: remote1, command: "sudo systemctl start tomcat"
+    }
+
+    stage('Pause') {
+        sleep 30
+    }
+
+    stage('CorrectVersion1') {
+        def response1 = httpRequest "http://192.168.100.11:8080/test-${VERSION}/"
+        def correct1 = response1.content.contains("${VERSION}")
+        if (correct1 == true) {
+            if (isUnix()) {
+                sh "echo 'Deployment to tomcat1 is correct'"
+            } else {
+                bat "echo 'Deployment to tomcat1 is correct'"
+            }
+        }
+    }
+
+    def remote2 = [:]
+    remote2.name = 'tomcat2'
+    remote2.host = '192.168.100.12'
+    remote2.user = 'root'
+    remote2.password = 'vagrant'
+    remote2.allowAnyHosts = true
+    stage('Remote SSH2') {
+        sshCommand remote: remote2, command: "sudo wget http://192.168.100.251:8081/nexus/content/repositories/snapshots/${repGroup}/${repArtifact}/${VERSION}-SNAPSHOT/${repArtifact}-${nameSnapshot}-${repClass}.war"
+        sshCommand remote: remote2, command: "sudo systemctl stop tomcat"
+        sshCommand remote: remote2, command: "sudo cp -f ~/${repArtifact}-${nameSnapshot}-${repClass}.war /usr/share/tomcat/webapps/test-${VERSION}.war"
+        sshCommand remote: remote2, command: "sudo systemctl start tomcat"
+    }
+
+    stage('Pause') {
+        sleep 30
+    }
+
+    stage('CorrectVersion2') {
+        def response2 = httpRequest "http://192.168.100.12:8080/test-${VERSION}/"
+        def correct2 = response2.content.contains("${VERSION}")
+        if (correct2 == true) {
+            if (isUnix()) {
+                sh "echo 'Deployment to tomcat2 is correct'"
+            } else {
+                bat "echo 'Deployment to tomcat2 is correct'"
+            }
+        }
+    }
+
+    stage('Git Commit') {
+        if (isUnix()) {
+                sh 'git commit -am "Merge task6 branch to master"'
+                sh 'git merge task6'
+                def gitTagList = sh(script: 'git tag -l', returnStdout: true)
+                def tagContVers = gitTagList.contains("${VERSION}")
+                if (tagContVers == false) {
+                    sh "git tag -a ${VERSION} -m \"new version ${VERSION}\""
+                }
+                sh "git checkout master"
+                withCredentials([usernamePassword(credentialsId: 'GitHubDzmitryBelavusau', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+                    sh("git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/DevOpsTraining.git -u master")
+                }
+        } else {
+                bat 'git commit -am "Merge task6 branch to master"'
+                bat 'git merge task6'
+                def gitTagList = bat(script: 'git tag -l', returnStdout: true)
+                def tagContVers = gitTagList.contains("${VERSION}")
+                if (tagContVers == false) {
+                    bat "git tag -a ${VERSION} -m \"new version ${VERSION}\""
+                }
+                bat "git checkout master"
+                withCredentials([usernamePassword(credentialsId: 'GitHubDzmitryBelavusau', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+                    bat("git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/DevOpsTraining.git -u master")
+                }
+        }
+    }
+}
