@@ -60,17 +60,11 @@ node('master') {
         def correct1 = response1.content.contains("${VERSION}")
         if (correct1 == true) {
             if (isUnix()) {
-                sh "echo 'Deployment to tomcat1 is correct'"
-            } else {
-                bat "echo 'Deployment to tomcat1 is correct'"
-            }
+            echo 'Deployment to tomcat1 is correct'
             httpRequest 'http://192.168.100.10/jkmanager?cmd=update&from=list&w=lb&sw=tomcat1&vwa=0'
         } else {
             if (isUnix()) {
-                sh "echo 'Deployment to tomcat1 is incorrect'"
-            } else {
-                bat "echo 'Deployment to tomcat1 is incorrect'"
-            }
+            echo 'Deployment to tomcat1 is incorrect'
             currentBuild.result = 'ABORTED'
             error('Deployment to tomcat1 is incorrect')
         }
@@ -94,18 +88,10 @@ node('master') {
         def response2 = httpRequest "http://192.168.100.12:8080/task6/"
         def correct2 = response2.content.contains("${VERSION}")
         if (correct2 == true) {
-            if (isUnix()) {
-                sh "echo 'Deployment to tomcat2 is correct'"
-            } else {
-                bat "echo 'Deployment to tomcat2 is correct'"
-            }
+            echo 'Deployment to tomcat2 is correct'
             httpRequest 'http://192.168.100.10/jkmanager?cmd=update&from=list&w=lb&sw=tomcat2&vwa=0'
         } else {
-            if (isUnix()) {
-                sh "echo 'Deployment to tomcat2 is incorrect'"
-            } else {
-                bat "echo 'Deployment to tomcat2 is incorrect'"
-            }
+            echo 'Deployment to tomcat2 is incorrect'
             currentBuild.result = 'ABORTED'
             error('Deployment to tomcat2 is incorrect')
         }
