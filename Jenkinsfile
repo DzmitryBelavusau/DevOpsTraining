@@ -6,7 +6,6 @@
     def snapshotinfoFile = ''
     def snapshotinfo = ''
     def nameSnapshot = ''
-    def deployCorrect = false
 
 node('master') {
     
@@ -60,7 +59,6 @@ node('master') {
         def response1 = httpRequest "http://192.168.100.11:8080/task6/"
         def correct1 = response1.content.contains("${VERSION}")
         if (correct1 == true) {
-            deployCorrect = true
             if (isUnix()) {
                 sh "echo 'Deployment to tomcat1 is correct'"
             } else {
@@ -73,18 +71,18 @@ node('master') {
             } else {
                 bat "echo 'Deployment to tomcat1 is incorrect'"
             }
+            currentBuild.result = 'ABORTED'
+            error('Deployment to tomcat1 is incorrect')
         }
     }
 }
 
 node('tomcat2'){
-    if (deployCorrect == true) {
         stage('Deploy tomcat2') {
             httpRequest 'http://192.168.100.10/jkmanager?cmd=update&from=list&w=lb&sw=tomcat2&vwa=1'
             sh "wget http://192.168.100.251:8081/nexus/content/repositories/snapshots/${repGroup}/${repArtifact}/${VERSION}-SNAPSHOT/${repArtifact}-${nameSnapshot}-${repClass}.war"
             sh "sudo cp -f ${repArtifact}-${nameSnapshot}-${repClass}.war /usr/share/tomcat/webapps/task6.war"
         }
-    }
 } 
 
 node('master') { 
@@ -108,6 +106,8 @@ node('master') {
             } else {
                 bat "echo 'Deployment to tomcat2 is incorrect'"
             }
+            currentBuild.result = 'ABORTED'
+            error('Deployment to tomcat2 is incorrect')
         }
     }
 
