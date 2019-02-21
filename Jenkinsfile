@@ -59,11 +59,9 @@ node('master') {
         def response1 = httpRequest "http://192.168.100.11:8080/task6/"
         def correct1 = response1.content.contains("${VERSION}")
         if (correct1 == true) {
-            if (isUnix()) {
             echo 'Deployment to tomcat1 is correct'
             httpRequest 'http://192.168.100.10/jkmanager?cmd=update&from=list&w=lb&sw=tomcat1&vwa=0'
         } else {
-            if (isUnix()) {
             echo 'Deployment to tomcat1 is incorrect'
             currentBuild.result = 'ABORTED'
             error('Deployment to tomcat1 is incorrect')
