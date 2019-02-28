@@ -1,0 +1,22 @@
+version: "3"
+services:
+  mycollectd1:
+    build:
+      context: ./collectd
+      dockerfile: Dockerfile
+  mycollectd2:
+    build:
+      context: ./collectd
+      dockerfile: Dockerfile
+  myinfluxdb:
+    build:
+      context: ./myinfluxdb
+      dockerfile: Dockerfile
+    environment: 
+      - INFLUXDB_DB=collectd
+  mygraphana:
+    build:
+      context: ./mygraphana
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
