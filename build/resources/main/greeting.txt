@@ -1,1 +1,0 @@
-Hello Gradle VERSION=1.0.27

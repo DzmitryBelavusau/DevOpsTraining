@@ -1,0 +1,33 @@
+version: "3"
+services:
+  filebeat:
+    build:
+      context: ./filebeat
+      dockerfile: Dockerfile
+    container_name: filebeat
+    expose:
+      - "5044"
+    depends_on:
+      - "logstash"
+  logstash:
+    image: docker.elastic.co/logstash/logstash-oss:6.6.1
+    expose:
+      - "5044"
+      - "9200"
+    volumes:
+      - "./logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf"
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.6.1
+    expose:
+      - "5044"
+      - "5601"
+      - "9200"
+    ports:
+      - "9200:9200"
+  kibana:
+    image: docker.elastic.co/kibana/kibana-oss:6.6.1
+    expose:
+      - "5601"
+      - "9200"
+    ports:
+      - "5601:5601"
