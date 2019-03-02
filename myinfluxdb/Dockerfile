@@ -1,6 +1,6 @@
 FROM influxdb
 LABEL maintainer="Dzmitry Belavusau"
-EXPOSE 8083
+#EXPOSE 8083
 EXPOSE 8086
 EXPOSE 25826
 COPY influxdb.conf /etc/influxdb/influxdb.conf
