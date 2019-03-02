@@ -7,5 +7,7 @@ RUN apt-get update && \
     filebeat modules enable apache2
 COPY filebeat.yml /etc/filebeat/
 COPY entrypoint.sh /home/
+RUN chmod +x /home/entrypoint.sh && \
+    chmod 700 /etc/filebeat/filebeat.yml
 CMD /home/entrypoint.sh
 #ENTRYPOINT filebeat -c /etc/filebeat/filebeat.yml -e

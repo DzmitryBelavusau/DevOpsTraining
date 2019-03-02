@@ -7,6 +7,8 @@ services:
     container_name: filebeat
     expose:
       - "5044"
+    ports:
+      - "80:80"
     depends_on:
       - "logstash"
   logstash:
