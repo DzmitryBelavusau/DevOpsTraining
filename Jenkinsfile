@@ -6,11 +6,14 @@
     def snapshotinfoFile = ''
     def snapshotinfo = ''
     def nameSnapshot = ''
+    def nexusIP = '10.70.5.201'
+    def dockerIP = '10.70.5.201'
+    def warFullPath =''
 
 node('master') {
     
     stage('Clone sources') {
-        git branch: 'task6', credentialsId: 'GitHubDzmitryBelavusau', url: 'https://github.com/DzmitryBelavusau/DevOpsTraining.git'
+        git branch: 'task7b', credentialsId: 'GitHubDzmitryBelavusau', url: 'https://github.com/DzmitryBelavusau/DevOpsTraining.git'
     }
 
     stage('Gradle incrementVersion') {
@@ -34,14 +37,33 @@ node('master') {
 
     stage('Nexus upload SNAPSHOT') {
         nexusArtifactUploader artifacts: [[artifactId: "${repArtifact}", classifier: "${repClass}", file: 'build/libs/task4.war', type: 'war']], 
-        credentialsId: 'nexusOSS', groupId: "${repGroup}", nexusUrl: 'localhost:8081/nexus', nexusVersion: 'nexus2', protocol: 'http', repository: 'snapshots', version: "${VERSION}"+'-SNAPSHOT'
+        credentialsId: 'nexusOSS', groupId: "${repGroup}", nexusUrl: "${nexusIP}:8081/nexus", nexusVersion: 'nexus2', protocol: 'http', repository: 'snapshots', version: "${VERSION}"+'-SNAPSHOT'
     }
 
-    snapshotinfoFile = httpRequest "http://192.168.100.251:8081/nexus/content/repositories/snapshots/${repGroup}/${repArtifact}/${VERSION}-SNAPSHOT/maven-metadata.xml"
+    snapshotinfoFile = httpRequest "http://${nexusIP}:8081/nexus/content/repositories/snapshots/${repGroup}/${repArtifact}/${VERSION}-SNAPSHOT/maven-metadata.xml"
     snapshotinfo = new XmlParser().parseText(snapshotinfoFile.content)
     nameSnapshot = snapshotinfo.versioning.snapshotVersions.snapshotVersion.value[0].text()
-}
+    warFullPath = "http://${nexusIP}:8081/nexus/content/repositories/snapshots/${repGroup}/${repArtifact}/${VERSION}-SNAPSHOT/${repArtifact}-${nameSnapshot}-${repClass}.war"
+
+    stage('Build image') {
+        def task7Image = docker.build("task7:${VERSION}", "--build-arg WARPATH=${warFullPath} . ")
+    }
+
+    stage('Push image') {
+        docker.withRegistry("https://${dockerIP}:5000") {
+            task7Image.push("${VERSION}")
+            task7Image.push("latest")
+        }
+    }
     
+    /*stage('Test image') {
+        task7Image.inside {
+            sh 'echo "Tests passed"'
+        }
+    }*/
+
+}
+/*    
 node('tomcat1'){
     stage('Deploy tomcat1') {
         httpRequest 'http://192.168.100.10/jkmanager?cmd=update&from=list&w=lb&sw=tomcat1&vwa=1'
@@ -49,9 +71,9 @@ node('tomcat1'){
         sh "sudo cp -f ${repArtifact}-${nameSnapshot}-${repClass}.war /usr/share/tomcat/webapps/task6.war"
     }
 }   
-
+*/
 node('master') {
-    stage('Pause') {
+    /*stage('Pause') {
         sleep 30
     }
 
@@ -65,33 +87,6 @@ node('master') {
             echo 'Deployment to tomcat1 is incorrect'
             currentBuild.result = 'ABORTED'
             error('Deployment to tomcat1 is incorrect')
-        }
-    }
-}
-
-node('tomcat2'){
-        stage('Deploy tomcat2') {
-            httpRequest 'http://192.168.100.10/jkmanager?cmd=update&from=list&w=lb&sw=tomcat2&vwa=1'
-            sh "wget http://192.168.100.251:8081/nexus/content/repositories/snapshots/${repGroup}/${repArtifact}/${VERSION}-SNAPSHOT/${repArtifact}-${nameSnapshot}-${repClass}.war"
-            sh "sudo cp -f ${repArtifact}-${nameSnapshot}-${repClass}.war /usr/share/tomcat/webapps/task6.war"
-        }
-} 
-
-node('master') { 
-    stage('Pause') {
-        sleep 30
-    }
-
-    stage('CorrectVersion2') {
-        def response2 = httpRequest "http://192.168.100.12:8080/task6/"
-        def correct2 = response2.content.contains("${VERSION}")
-        if (correct2 == true) {
-            echo 'Deployment to tomcat2 is correct'
-            httpRequest 'http://192.168.100.10/jkmanager?cmd=update&from=list&w=lb&sw=tomcat2&vwa=0'
-        } else {
-            echo 'Deployment to tomcat2 is incorrect'
-            currentBuild.result = 'ABORTED'
-            error('Deployment to tomcat2 is incorrect')
         }
     }
 
@@ -129,5 +124,5 @@ node('master') {
                 bat("git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/DevOpsTraining.git --tags")
             }
        }
-    }
+    }*/
 }
