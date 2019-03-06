@@ -3,8 +3,10 @@ services:
   cacheregistry:
     image: registry:2
     volumes:
-      - "/home/user/registrystorage:/var/lib/registry/"
+      - "registrystorage:/var/lib/registry/"
       - "./config.yml:/etc/docker/registry/config.yml"
     restart: always
     ports:
       - "5000:5000"
+volumes:
+  registrystorage:
