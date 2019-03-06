@@ -1,5 +1,5 @@
 {
-   "insecure-registries" :["10.70.5.201:5000"],
-   "registry-mirrors": ["http://10.70.5.201:5000"]
+   "insecure-registries" :["localhost:5000"],
+   "registry-mirrors": ["http://localhost:5000"]
 
 }
