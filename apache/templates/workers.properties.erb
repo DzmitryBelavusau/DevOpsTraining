@@ -1,0 +1,10 @@
+worker.list=lb, status
+        worker.status.type=status
+        worker.lb.type=lb
+        worker.lb.balance_workers=tomcat1, tomcat2, other
+        worker.tomcat1.host=192.168.0.11
+        worker.tomcat1.port=8009
+        worker.tomcat1.type=ajp13
+        worker.tomcat2.host=192.168.0.12
+        worker.tomcat2.port=8009
+        worker.tomcat2.type=ajp13

@@ -13,12 +13,12 @@ verifier:
   name: inspec
 
 platforms:
-  - name: centos-7.6
+  - name: centos-7
 
 suites:
   - name: default
     run_list:
-      - recipe[task9::default]
+      - recipe[apache::default]
     verifier:
       inspec_tests:
         - test/integration/default
