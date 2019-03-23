@@ -15,15 +15,8 @@ user 'apache' do
 end
 
 package "apache2" do
-    case node[:platform]
-    when "centos","redhat","fedora","suse"
-      package_name "httpd"
-    when "debian","ubuntu"
-      package_name "apache2"
-    when "arch"
-      package_name "apache"
-    end
-    action :install
+  package_name "httpd"
+  action :install
 end
 
 cookbook_file '/etc/httpd/modules/mod_jk.so' do
@@ -41,7 +34,11 @@ template '/etc/httpd/conf.d/loadbalancer.conf' do
     source 'loadbalancer.conf.erb'
 end
 
-execute 'start apache from user' do
-#    user 'apache'      //https starts under 'apache' user writen in httpd.conf
-    command 'systemctl start httpd'
+service "httpd" do
+  action [ :enable, :start ]
 end
+
+#execute 'start apache from user' do
+#    user 'apache'      //https starts under 'apache' user writen in httpd.conf
+#    command 'systemctl start httpd'
+#end
