@@ -8,7 +8,9 @@
     def nameSnapshot = ''
     def nexusIP = '10.70.5.201'
     def dockerIP = '10.70.5.201'
-    def warFullPath =''
+    def warFullPath = ''
+    def task7Image = ''
+    def serviceRun = ''
 
 node('master') {
     
@@ -32,7 +34,7 @@ node('master') {
         }
     }
 
-    props = readProperties  file:'gradle.properties'
+    props = readProperties file: 'gradle.properties'
     VERSION = props['VERSION']
 
     stage('Nexus upload SNAPSHOT') {
@@ -46,7 +48,7 @@ node('master') {
     warFullPath = "http://${nexusIP}:8081/nexus/content/repositories/snapshots/${repGroup}/${repArtifact}/${VERSION}-SNAPSHOT/${repArtifact}-${nameSnapshot}-${repClass}.war"
 
     stage('Build image') {
-        def task7Image = docker.build("task7:${VERSION}", "--build-arg WARPATH=${warFullPath} . ")
+        task7Image = docker.build("task7:${VERSION}", "--build-arg WARPATH=${warFullPath} . ")
     }
 
     stage('Push image') {
@@ -56,37 +58,30 @@ node('master') {
         }
     }
     
-    /*stage('Test image') {
-        task7Image.inside {
-            sh 'echo "Tests passed"'
-        }
-    }*/
-
-}
-/*    
-node('tomcat1'){
-    stage('Deploy tomcat1') {
-        httpRequest 'http://192.168.100.10/jkmanager?cmd=update&from=list&w=lb&sw=tomcat1&vwa=1'
-        sh "wget http://192.168.100.251:8081/nexus/content/repositories/snapshots/${repGroup}/${repArtifact}/${VERSION}-SNAPSHOT/${repArtifact}-${nameSnapshot}-${repClass}.war"
-        sh "sudo cp -f ${repArtifact}-${nameSnapshot}-${repClass}.war /usr/share/tomcat/webapps/task6.war"
-    }
-}   
-*/
-node('master') {
-    /*stage('Pause') {
-        sleep 30
-    }
-
-    stage('CorrectVersion1') {
-        def response1 = httpRequest "http://192.168.100.11:8080/task6/"
-        def correct1 = response1.content.contains("${VERSION}")
-        if (correct1 == true) {
-            echo 'Deployment to tomcat1 is correct'
-            httpRequest 'http://192.168.100.10/jkmanager?cmd=update&from=list&w=lb&sw=tomcat1&vwa=0'
+    stage('Create-update service') {
+        serviceRun = sh returnStdout: true, script: "docker service ls"
+        if (serviceRun.contains('task7')) {
+            sh "docker service update --image ${dockerIP}:5000/task7:${VERSION} task7 "
         } else {
-            echo 'Deployment to tomcat1 is incorrect'
+            sh "docker service create -p 38080:8080 --replicas=2 --name task7 ${dockerIP}:5000/task7:${VERSION}"
+        }
+    }
+
+    stage('Pause') {
+        sleep 10
+    }
+
+    stage('CorrectVersion') {
+        //def response = httpRequest "http://${dockerIP}:38080/task7b/"
+        def response = sh returnStdout: true, script: "curl http://${dockerIP}:38080/task7b/"
+        //def correct = response.content.contains("${VERSION}")
+        def correct = response.contains("${VERSION}")
+        if (correct == true) {
+            echo 'Deployment to Docker Swarm is correct'
+        } else {
+            echo 'Deployment to Docker Swarm is incorrect'
             currentBuild.result = 'ABORTED'
-            error('Deployment to tomcat1 is incorrect')
+            error('Deployment to Docker Swarm is incorrect')
         }
     }
 
@@ -95,26 +90,27 @@ node('master') {
             withCredentials([usernamePassword(credentialsId: 'GitHubDzmitryBelavusau', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
                 sh 'git add gradle.properties'
                 sh 'git commit -m "new version of gradle.properties"'
-                sh("git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/DevOpsTraining.git -u task6")
+                sh("git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/DevOpsTraining.git -u task7b")
                 sh "git checkout master"
                 sh 'git pull origin master'
-                sh 'git merge task6'
+                sh 'git merge task7b'
                 sh("git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/DevOpsTraining.git -u master")
-                def gitTagList = bat(script: 'git tag -l', returnStdout: true)
+                def gitTagList = sh(script: 'git tag -l', returnStdout: true)
                 def tagContVers = gitTagList.contains("${VERSION}")
                 if (tagContVers == false) {
                     sh "git tag -a ${VERSION} -m \"new version ${VERSION}\""
                 }
                 sh("git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/DevOpsTraining.git --tags")
             }            
-        } else {
+        } 
+        else {
             withCredentials([usernamePassword(credentialsId: 'GitHubDzmitryBelavusau', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
                 bat 'git add gradle.properties'
                 bat 'git commit -m "new version of gradle.properties"'
-                bat("git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/DevOpsTraining.git -u task6")
+                bat("git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/DevOpsTraining.git -u task7b")
                 bat "git checkout master"
                 bat 'git pull origin master'
-                bat 'git merge task6'
+                bat 'git merge task7b'
                 bat("git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/DevOpsTraining.git -u master")
                 def gitTagList = bat(script: 'git tag -l', returnStdout: true)
                 def tagContVers = gitTagList.contains("${VERSION}")
@@ -123,6 +119,6 @@ node('master') {
                 }
                 bat("git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/DevOpsTraining.git --tags")
             }
-       }
-    }*/
+        }
+    }
 }
