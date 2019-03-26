@@ -4,7 +4,7 @@ maintainer_email 'you@example.com'
 license 'All Rights Reserved'
 description 'Installs/Configures bluegreen'
 long_description 'Installs/Configures bluegreen'
-version '0.1.40'
+version '0.1.41'
 chef_version '>= 13.0'
 depends 'docker', '~> 4.9.2'
 

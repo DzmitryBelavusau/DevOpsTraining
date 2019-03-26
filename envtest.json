@@ -1,0 +1,1 @@
+{"name":"test","description":"","cookbook_versions":{},"json_class":"Chef::Environment","chef_type":"environment","default_attributes":{"image":{"version":"1.0.36"}},"override_attributes":{}}
