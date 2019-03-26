@@ -11,14 +11,6 @@ node('master') {
     stage('Clone sources') {
         git branch: 'task10', credentialsId: 'GitHubDzmitryBelavusau', url: 'https://github.com/DzmitryBelavusau/DevOpsTraining.git'
     }
-
-    /*stage('Gradle incrementVersion') {
-        if (isUnix()) {
-            sh './gradlew incrementVersion'
-        } else {
-            bat 'gradlew.bat incrementVersion'
-        }
-    }*/
     
     stage('read cookbook version') {
         props = readProperties file: "${env.WORKSPACE}/${metadataFile}"
