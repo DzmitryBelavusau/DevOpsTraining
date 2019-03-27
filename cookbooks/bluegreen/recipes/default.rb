@@ -4,7 +4,11 @@
 #
 # Copyright:: 2019, The Authors, All Rights Reserved.
 
-require 'chef/mixin/shell_out'
+docker_service 'default' do
+    #group 'dockerroot'
+    insecure_registry '10.70.5.202:5000'
+    action [:create, :start]
+end
 
 docker_image '10.70.5.202:5000/task7' do
     tag node['image']['version']
@@ -13,8 +17,9 @@ end
 
 ruby_block "get port blue" do
     block do
+        require 'chef/mixin/shell_out'
         node.run_state['serviceport'] = '0'
-        Chef::Resource::RubyBlock.send(:include, Chef::Mixin::ShellOut)      
+        Chef::Resource::RubyBlock.send(:include, Chef::Mixin::ShellOut)
         command = 'docker ps --format "{{.Ports}}"'
         command_out = shell_out(command)
         node.default['port'] = command_out.stdout
