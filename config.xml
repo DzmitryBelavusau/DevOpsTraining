@@ -1,159 +1,70 @@
 <?xml version='1.1' encoding='UTF-8'?>
-<flow-definition plugin="workflow-job@2.32">
+<project>
   <actions/>
   <description></description>
   <keepDependencies>false</keepDependencies>
   <properties>
     <hudson.model.ParametersDefinitionProperty>
       <parameterDefinitions>
-        <org.biouno.unochoice.ChoiceParameter plugin="uno-choice@2.1">
-          <name>dockerImageTag</name>
+        <hudson.model.StringParameterDefinition>
+          <name>MajorVersion</name>
           <description></description>
-          <randomName>choice-parameter-504148692987318</randomName>
-          <visibleItemCount>1</visibleItemCount>
-          <script class="org.biouno.unochoice.model.GroovyScript">
-            <secureScript plugin="script-security@1.54">
-              <script>import groovy.json.JsonSlurper
-
-URL dockerRegistry = new URL(&quot;http://10.70.5.202:5000/v2/task7/tags/list&quot;)
-def taglist = new JsonSlurper().parseText(dockerRegistry.text)
-
-return taglist.tags</script>
-              <sandbox>false</sandbox>
-            </secureScript>
-            <secureFallbackScript plugin="script-security@1.54">
-              <script></script>
-              <sandbox>false</sandbox>
-            </secureFallbackScript>
-          </script>
-          <projectName>task10</projectName>
-          <choiceType>PT_SINGLE_SELECT</choiceType>
-          <filterable>false</filterable>
-          <filterLength>1</filterLength>
-        </org.biouno.unochoice.ChoiceParameter>
-        <org.biouno.unochoice.ChoiceParameter plugin="uno-choice@2.1">
-          <name>chefEnv</name>
+          <defaultValue>0</defaultValue>
+          <trim>false</trim>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>MinorVersion</name>
           <description></description>
-          <randomName>choice-parameter-522577752478812</randomName>
-          <visibleItemCount>1</visibleItemCount>
-          <script class="org.biouno.unochoice.model.GroovyScript">
-            <secureScript plugin="script-security@1.54">
-              <script>import groovy.json.JsonSlurper 
-
-def cmd = &quot;knife environment list -F json -c /home/user/share/chef-repo/.chef/knife.rb&quot;
-Process process = cmd.execute()
-process.waitFor()
-def envlist = new JsonSlurper().parseText(process.text)
-return envlist.sort()</script>
-              <sandbox>false</sandbox>
-            </secureScript>
-            <secureFallbackScript plugin="script-security@1.54">
-              <script></script>
-              <sandbox>false</sandbox>
-            </secureFallbackScript>
-          </script>
-          <projectName>task10</projectName>
-          <choiceType>PT_SINGLE_SELECT</choiceType>
-          <filterable>false</filterable>
-          <filterLength>1</filterLength>
-        </org.biouno.unochoice.ChoiceParameter>
+          <defaultValue>1</defaultValue>
+          <trim>false</trim>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>PatchVersion</name>
+          <description></description>
+          <defaultValue>0</defaultValue>
+          <trim>false</trim>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.PasswordParameterDefinition>
+          <name>OctopusApiKey</name>
+          <description></description>
+          <defaultValue></defaultValue>
+        </hudson.model.PasswordParameterDefinition>
       </parameterDefinitions>
     </hudson.model.ParametersDefinitionProperty>
   </properties>
-  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.64">
-    <script>    def props = &apos;&apos;
-    def version = &apos;&apos;
-    def updatedVersion = &apos;&apos;
-    def cookbook = &apos;cookbooks/bluegreen&apos;
-    def metadataFile = &apos;cookbooks/bluegreen/metadata.rb&apos;
-    def attributesFile = &apos;cookbooks/bluegreen/attributes/default.rb&apos;
-    def envProperties = &apos;&apos;
-
-node(&apos;master&apos;) {
-    
-    stage(&apos;Clone sources&apos;) {
-        git branch: &apos;task10&apos;, credentialsId: &apos;GitHubDzmitryBelavusau&apos;, url: &apos;https://github.com/DzmitryBelavusau/DevOpsTraining.git&apos;
-    }
-
-    /*stage(&apos;Gradle incrementVersion&apos;) {
-        if (isUnix()) {
-            sh &apos;./gradlew incrementVersion&apos;
-        } else {
-            bat &apos;gradlew.bat incrementVersion&apos;
-        }
-    }*/
-    
-    stage(&apos;read cookbook version&apos;) {
-        props = readProperties file: &quot;${env.WORKSPACE}/${metadataFile}&quot;
-        version = props[&apos;version&apos;]
-        version = version.replaceAll(/&apos;/, &apos;&apos;)
-    }
-
-    stage(&apos;increment cookbook version&apos;) {
-        String minorVers=version.substring(version.lastIndexOf(&apos;.&apos;)+1)
-        int minorNew=minorVers.toInteger()+1
-        String majorVers=version.substring(0,version.lastIndexOf(&quot;.&quot;))
-        updatedVersion=majorVers+ &quot;.&quot; +minorNew
-    }
-
-    stage(&apos;write cookbook version&apos;) {
-        String propsString = new File(&quot;${env.WORKSPACE}/${metadataFile}&quot;).text
-        File propsFile = new File(&quot;${env.WORKSPACE}/${metadataFile}&quot;)
-        propsString = propsString.replace(version, updatedVersion)
-        propsFile.write(propsString)
-    }
-
-    stage(&apos;read dockerImage version&apos;) {
-        props = readProperties file: &quot;${env.WORKSPACE}/${attributesFile}&quot;
-        version = props[&quot;default[&apos;image&apos;][&apos;version&apos;]&quot;]
-        version = version.replaceAll(/&apos;/, &apos;&apos;)
-        print dockerImageTag
-    }
-
-    stage(&apos;write dockerImage version&apos;) {
-        String propsString = new File(&quot;${env.WORKSPACE}/${attributesFile}&quot;).text
-        File propsFile = new File(&quot;${env.WORKSPACE}/${attributesFile}&quot;)
-        propsString = propsString.replace(version, dockerImageTag)
-        propsFile.write(propsString)
-    }
-
-    stage(&apos;read env variables&apos;) {
-        def envFile = sh returnStdout: true, script: &quot;knife environment show ${chefEnv} -F json&quot;
-        envProperties = readJSON text: envFile;
-    }
-
-    stage(&apos;set env variables&apos;) {
-        envProperties.default_attributes.image.version = dockerImageTag
-        writeJSON file: &quot;env${chefEnv}.json&quot;, json: envProperties
-        sh &quot;cat env${chefEnv}.json&quot;
-    }
-
-    stage(&apos;upload env variables&apos;) {
-        sh &quot;knife environment from file env${chefEnv}.json&quot;
-    }
-
-    stage(&apos;upload cookbook&apos;) {
-        dir(&quot;${env.WORKSPACE}/${cookbook}&quot;) {
-            sh &quot;berks install &amp;&amp; berks upload&quot;
-        }
-    }
-
-    stage(&apos;Git Commit&apos;) {
-            withCredentials([usernamePassword(credentialsId: &apos;GitHubDzmitryBelavusau&apos;, passwordVariable: &apos;GIT_PASSWORD&apos;, usernameVariable: &apos;GIT_USERNAME&apos;)]) {
-                sh &apos;git add .&apos;
-                sh &apos;git commit -m &quot;new version of cookbook&quot;&apos;
-                sh(&quot;git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${GIT_USERNAME}/DevOpsTraining.git -u task10&quot;)
-            }            
-    }
-
-    stage(&apos;start chef-client&apos;) {
-        withCredentials([usernamePassword(credentialsId: &apos;ChefClientCentos72&apos;, passwordVariable: &apos;KNIFE_PASSWORD&apos;, usernameVariable: &apos;KNIFE_USERNAME&apos;)]) {
-            sh(&quot;knife ssh &apos;chef_environment:test&apos; &apos;sudo chef-client&apos; -x ${KNIFE_USERNAME} -P ${KNIFE_PASSWORD}&quot;)
-            } 
-    }
-}</script>
-    <sandbox>false</sandbox>
-  </definition>
-  <triggers/>
+  <scm class="hudson.plugins.git.GitSCM" plugin="git@3.9.3">
+    <configVersion>2</configVersion>
+    <userRemoteConfigs>
+      <hudson.plugins.git.UserRemoteConfig>
+        <url>https://github.com/gordash2013/MusicStoreTest.git</url>
+      </hudson.plugins.git.UserRemoteConfig>
+    </userRemoteConfigs>
+    <branches>
+      <hudson.plugins.git.BranchSpec>
+        <name>*/master</name>
+      </hudson.plugins.git.BranchSpec>
+    </branches>
+    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+    <submoduleCfg class="list"/>
+    <extensions/>
+  </scm>
+  <canRoam>true</canRoam>
   <disabled>false</disabled>
-</flow-definition>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.tasks.BatchFile>
+      <command>dotnet publish &quot;%WORKSPACE%\samples\MusicStore\MusicStore.csproj&quot; --framework netcoreapp2.0</command>
+    </hudson.tasks.BatchFile>
+    <hudson.tasks.BatchFile>
+      <command>nuget.exe pack &quot;%WORKSPACE%\samples\MusicStore.nuspec&quot; -IncludeReferencedProjects -Version %MajorVersion%.%MinorVersion%.%PatchVersion% -Properties Configuration=Release</command>
+    </hudson.tasks.BatchFile>
+    <hudson.tasks.BatchFile>
+      <command>c:\Octopus\Octo\Octo.exe push --package MusicStore.%MajorVersion%.%MinorVersion%.%PatchVersion%.nupkg --replace-existing --server http://localhost --apiKey %OctopusApiKey%</command>
+    </hudson.tasks.BatchFile>
+  </builders>
+  <publishers/>
+  <buildWrappers/>
+</project>
