@@ -2,7 +2,9 @@ resource "aws_launch_configuration" "task11-LC" {
   name_prefix     = "task11-"
   image_id        = "ami-0c55b159cbfafe1f0"
   instance_type   = "t2.micro"
-  security_groups = ["${aws_security_group.task11-SG.id}"]
+  security_groups = ["${aws_security_group.task11-SG-instance.id}"]
+  associate_public_ip_address = true
+  key_name = "ubuntu1804"
   
   lifecycle {
     create_before_destroy = true
