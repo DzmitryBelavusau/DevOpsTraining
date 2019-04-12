@@ -1,9 +1,16 @@
 resource "aws_security_group" "task11-SG-instance" {
   name        = "task11-SG-instance"
   description = "allow all ssh, alb 80"
-  vpc_id      = "${aws_vpc.main.id}"
+  vpc_id      = "vpc-ce2435a6"
 
  ingress {
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    security_groups = ["${aws_security_group.task11-SG-alb.id}"]
+  }
+
+  egress {
     from_port       = 80
     to_port         = 80
     protocol        = "tcp"
@@ -28,7 +35,7 @@ resource "aws_security_group" "task11-SG-instance" {
 resource "aws_security_group" "task11-SG-alb" {
   name        = "task11-SG-alb"
   description = "allow all 80"
-  vpc_id      = "${aws_vpc.main.id}"
+  vpc_id      = "vpc-ce2435a6"
 
   ingress {
     from_port   = 80

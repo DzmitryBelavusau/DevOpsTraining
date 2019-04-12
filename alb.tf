@@ -2,7 +2,7 @@ resource "aws_lb_target_group" "task11-ALB" {
   name     = "task11-ALB"
   port     = 80
   protocol = "HTTP"
-  vpc_id   = "${aws_vpc.main.id}"
+  vpc_id   = "vpc-ce2435a6"
 }
 
 resource "aws_lb" "task11-LB" {
@@ -10,7 +10,7 @@ resource "aws_lb" "task11-LB" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = ["${aws_security_group.task11-SG-alb.id}"]
-  subnets            = ["${aws_subnet.task11-subnet-use2a.id}", "${aws_subnet.task11-subnet-use2b.id}"]
+  subnets            = ["${data.aws_subnet.use2a.id}", "${data.aws_subnet.use2b.id}"]
 
   enable_deletion_protection = false
 

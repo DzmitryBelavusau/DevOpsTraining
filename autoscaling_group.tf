@@ -20,7 +20,7 @@ resource "aws_autoscaling_group" "task11-ASG" {
   desired_capacity          = 1
   force_delete              = true
   launch_configuration      = "${aws_launch_configuration.task11-LC.name}"
-  vpc_zone_identifier       = ["${aws_subnet.task11-subnet-use2a.id}", "${aws_subnet.task11-subnet-use2b.id}"]
+  vpc_zone_identifier       = ["${data.aws_subnet.use2a.id}", "${data.aws_subnet.use2b.id}"]
 
   lifecycle {
     create_before_destroy = true
