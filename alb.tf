@@ -5,6 +5,12 @@ resource "aws_lb_target_group" "task11-ALB" {
   vpc_id   = "vpc-ce2435a6"
 }
 
+resource "aws_lb_target_group_attachment" "test" {
+  target_group_arn = "${aws_lb_target_group.task11-ALB.arn}"
+  target_id        = "${data.aws_instance.task11-instID.id}"
+  port             = 80
+}
+
 resource "aws_lb" "task11-LB" {
   name               = "task11-LB"
   internal           = false

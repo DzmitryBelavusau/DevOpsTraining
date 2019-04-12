@@ -1,5 +1,5 @@
 resource "aws_launch_configuration" "task11-LC" {
-  name_prefix     = "task11-"
+  name            = "task11-instance"
   image_id        = "ami-0c55b159cbfafe1f0"
   instance_type   = "t2.micro"
   security_groups = ["${aws_security_group.task11-SG-instance.id}"]
